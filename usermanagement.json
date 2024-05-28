@@ -1,0 +1,11 @@
+{
+    "ACCESS_TOKEN": "",
+    "CLIENT_ID": "",
+    "URLS": {
+        "CREATIVE_CLOUD_URL": "",
+	    "ACROBAT_URL": "",
+        "ANY_PRODUCT_YOU_HAVE": ""
+    },
+    "okta_org_url": "",
+    "okta_token": ""
+}
