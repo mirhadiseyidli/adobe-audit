@@ -17,20 +17,49 @@ class GetAdobeUserStatus:
             'token': config['okta_token']
         })
 
+    async def fetch_access_token(self, config_file):
+        with open(config_file, 'r') as file:
+            config = json.load(file)
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        data = {
+            'grant_type': 'client_credentials',
+            'client_id': config['CLIENT_ID'],
+            'client_secret': config['CLIENT_SECRET'],
+            'scope': 'openid,AdobeID,user_management_sdk'
+        }
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(config['ACCESS_TOKEN_URL'], headers=headers, data=data) as response:
+                    response_text = await response.text()
+                    if response.status != 200:
+                        logging.error(f"Error response {response.status}: {response_text}")
+                        return {"error": response.status, "message": response_text}
+                    token_response = json.loads(response_text)
+                    return token_response['access_token']
+        except Exception as e:
+            logging.error(f"An exception occurred while fetching the token: {e}")
+            return None
+
     async def fetch(self, config_file, url):
         try:
             with open(config_file, 'r') as file:
                 config = json.load(file)
+
+            access_token = await self.fetch_access_token(config_file)
+            if not access_token:
+                return {"error": "token_fetch_failed", "message": "Failed to fetch access token"}
+
             headers = {
                 "Content-Type": "application/json",
                 'X-Api-Key': config['CLIENT_ID'],
-                'Authorization': 'Bearer ' + config['ACCESS_TOKEN']
+                'Authorization': 'Bearer ' + access_token
             }
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(url) as response:
                     response_text = await response.text()
                     if response.status != 200:
-                        # Log error response
                         logging.error(f"Error response {response.status}: {response_text}")
                         return {"error": response.status, "message": response_text}
                     return response_text
